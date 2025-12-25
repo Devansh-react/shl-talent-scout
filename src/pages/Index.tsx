@@ -1,12 +1,102 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useRef } from "react";
+import Header from "@/components/Header";
+import InputForm from "@/components/InputForm";
+import ResultsList from "@/components/ResultsList";
+import LoadingState from "@/components/LoadingState";
+import EmptyState from "@/components/EmptyState";
+import ErrorState from "@/components/ErrorState";
+import Footer from "@/components/Footer";
+
+const API_BASE_URL = "https://recomendation-system-0-0.onrender.com";
+
+interface Recommendation {
+  assessment_name: string;
+  assessment_url: string;
+}
+
+interface ApiResponse {
+  query: string;
+  recommendations: Recommendation[];
+}
+
+type AppState = "idle" | "loading" | "success" | "error";
 
 const Index = () => {
+  const [state, setState] = useState<AppState>("idle");
+  const [results, setResults] = useState<ApiResponse | null>(null);
+  const [error, setError] = useState<string>("");
+  const [lastQuery, setLastQuery] = useState<string>("");
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  const handleSubmit = async (query: string) => {
+    setState("loading");
+    setLastQuery(query);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/recommend`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      setResults(data);
+      setState("success");
+
+      // Smooth scroll to results
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } catch (err) {
+      console.error("API Error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch recommendations. Please check your connection and try again."
+      );
+      setState("error");
+    }
+  };
+
+  const handleRetry = () => {
+    if (lastQuery) {
+      handleSubmit(lastQuery);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+      
+      <main className="flex-1 py-8 space-y-12">
+        <InputForm onSubmit={handleSubmit} isLoading={state === "loading"} />
+
+        <div ref={resultsRef}>
+          {state === "idle" && <EmptyState />}
+          
+          {state === "loading" && <LoadingState />}
+          
+          {state === "error" && (
+            <ErrorState message={error} onRetry={handleRetry} />
+          )}
+          
+          {state === "success" && results && (
+            <ResultsList
+              query={results.query}
+              recommendations={results.recommendations}
+            />
+          )}
+        </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };
