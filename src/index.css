@@ -67,10 +67,36 @@
   }
 
   .dark {
+    /* Page */
     --background: 222 30% 8%;
     --foreground: 210 20% 96%;
-    /* unchanged */
+
+    /* Cards & surfaces */
+    --card: 222 25% 14%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 222 25% 14%;
+    --popover-foreground: 210 20% 96%;
+
+    /* Primary */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary surfaces */
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 210 20% 90%;
+
+    --muted: 222 20% 18%;
+    --muted-foreground: 215 15% 60%;
+
+    --accent: 222 20% 18%;
+    --accent-foreground: 210 20% 96%;
+
+    --border: 222 20% 20%;
+    --input: 222 20% 20%;
+    --ring: 217 91% 60%;
   }
+
 }
 
 @layer base {

@@ -6,6 +6,7 @@ import LoadingState from "@/components/LoadingState";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import Footer from "@/components/Footer";
+import { useEffect } from "react";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -22,6 +23,9 @@ interface ApiResponse {
 type AppState = "idle" | "loading" | "success" | "error";
 
 const Index = () => {
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
   const [state, setState] = useState<AppState>("idle");
   const [results, setResults] = useState<ApiResponse | null>(null);
   const [error, setError] = useState<string>("");
