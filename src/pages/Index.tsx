@@ -8,7 +8,7 @@ import ErrorState from "@/components/ErrorState";
 import Footer from "@/components/Footer";
 import { useEffect } from "react";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://recomendation-system-0-0.onrender.com";
 
 interface Recommendation {
   assessment_name: string;
