@@ -7,7 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import Footer from "@/components/Footer";
 
-const API_BASE_URL = "https://recomendation-system-0-0.onrender.com";
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 interface Recommendation {
   assessment_name: string;
@@ -44,13 +44,22 @@ const Index = () => {
 
       if (!response.ok) {
         throw new Error(`Server responded with status ${response.status}`);
-      }
 
-      const data: ApiResponse = await response.json();
-      setResults(data);
+      }
+      const rawData = await response.json();
+
+      const transformedData: ApiResponse = {
+        query: rawData.query,
+        recommendations: rawData.recommendations.map((rec: any) => ({
+          assessment_name: rec.name,
+          assessment_url: rec.url,
+        })),
+      };
+
+      setResults(transformedData);
+
       setState("success");
 
-      // Smooth scroll to results
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -59,34 +68,29 @@ const Index = () => {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to fetch recommendations. Please check your connection and try again."
+          : "Failed to fetch recommendations. Please try again."
       );
       setState("error");
     }
   };
 
   const handleRetry = () => {
-    if (lastQuery) {
-      handleSubmit(lastQuery);
-    }
+    if (lastQuery) handleSubmit(lastQuery);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       <main className="flex-1 py-8 space-y-12">
         <InputForm onSubmit={handleSubmit} isLoading={state === "loading"} />
 
         <div ref={resultsRef}>
           {state === "idle" && <EmptyState />}
-          
           {state === "loading" && <LoadingState />}
-          
           {state === "error" && (
             <ErrorState message={error} onRetry={handleRetry} />
           )}
-          
           {state === "success" && results && (
             <ResultsList
               query={results.query}
