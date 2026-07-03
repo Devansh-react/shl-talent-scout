@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+
 import Header from "@/components/Header";
 import InputForm from "@/components/InputForm";
 import ResultsList from "@/components/ResultsList";
@@ -6,7 +7,6 @@ import LoadingState from "@/components/LoadingState";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import Footer from "@/components/Footer";
-import { useEffect } from "react";
 
 const API_BASE_URL = "https://recomendation-system-3.onrender.com";
 
@@ -26,10 +26,12 @@ const Index = () => {
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
+
   const [state, setState] = useState<AppState>("idle");
   const [results, setResults] = useState<ApiResponse | null>(null);
-  const [error, setError] = useState<string>("");
-  const [lastQuery, setLastQuery] = useState<string>("");
+  const [error, setError] = useState("");
+  const [lastQuery, setLastQuery] = useState("");
+
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (query: string) => {
@@ -38,48 +40,65 @@ const Index = () => {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/recommend`, {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: query,
+            },
+          ],
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
-
-      }
       const rawData = await response.json();
 
+      if (!response.ok) {
+        throw new Error(
+          rawData?.detail
+            ? JSON.stringify(rawData.detail)
+            : `Server responded with ${response.status}`
+        );
+      }
+
       const transformedData: ApiResponse = {
-        query: rawData.query,
-        recommendations: rawData.recommendations.map((rec: any) => ({
+        query,
+        recommendations: (rawData.recommendations ?? []).map((rec: any) => ({
           assessment_name: rec.name,
           assessment_url: rec.url,
         })),
       };
 
       setResults(transformedData);
-
       setState("success");
 
       setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        resultsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     } catch (err) {
-      console.error("API Error:", err);
+      console.error(err);
+
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to fetch recommendations. Please try again."
+          : "Failed to connect to the backend."
       );
+
       setState("error");
     }
   };
 
   const handleRetry = () => {
-    if (lastQuery) handleSubmit(lastQuery);
+    if (lastQuery) {
+      handleSubmit(lastQuery);
+    }
   };
 
   return (
@@ -87,14 +106,23 @@ const Index = () => {
       <Header />
 
       <main className="flex-1 py-8 space-y-12">
-        <InputForm onSubmit={handleSubmit} isLoading={state === "loading"} />
+        <InputForm
+          onSubmit={handleSubmit}
+          isLoading={state === "loading"}
+        />
 
         <div ref={resultsRef}>
           {state === "idle" && <EmptyState />}
+
           {state === "loading" && <LoadingState />}
+
           {state === "error" && (
-            <ErrorState message={error} onRetry={handleRetry} />
+            <ErrorState
+              message={error}
+              onRetry={handleRetry}
+            />
           )}
+
           {state === "success" && results && (
             <ResultsList
               query={results.query}
